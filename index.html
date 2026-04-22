@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYC GTM Chutes & Ladders | Pathlight</title>
+<meta property="og:title" content="NYC GTM Chutes & Ladders | Pathlight">
+<meta property="og:description" content="Can you navigate a founder's GTM journey from zero to Series A? Play the Pathlight NYC GTM Chutes & Ladders game.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NYC GTM Chutes & Ladders | Pathlight">
+<meta name="twitter:description" content="Navigate a founder's GTM journey from zero to Series A. A game by Pathlight.">
+<link rel="icon" href="assets/brand-symbol-orange.svg">
+<style>
+@font-face { font-family:'DM Sans'; src:url('assets/fonts/DMSans-VariableFont_opsz,wght.ttf') format('truetype'); font-weight:100 900; font-style:normal; font-display:swap; }
+@font-face { font-family:'JetBrains Mono'; src:url('assets/fonts/JetBrainsMono-VariableFont_wght.ttf') format('truetype'); font-weight:100 800; font-style:normal; font-display:swap; }
+</style>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --gold:#ff9f3f;--gold-glow:rgba(255,159,63,0.4);--gold-deep:#d8932e;
+  --blue-accent:#7ea5e5;--red:#E63946;
+  --navy:#2b2c2d;--navy-light:#363738;--cream:#f4f1ea;
+  --green:#2d6a4f;--green-light:#40916c;--purple:#7b6b9e;
+}
+
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--navy);color:var(--cream);min-height:100vh;overflow-x:hidden;animation:ambientGradient 20s ease-in-out infinite}
+@keyframes ambientGradient{0%,100%{background:radial-gradient(ellipse at 30% 50%,#32333a 0%,#2b2c2d 60%)}50%{background:radial-gradient(ellipse at 70% 40%,#2f3035 0%,#2b2c2d 60%)}}
+#ambientCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6}
+
+.header{text-align:center;padding:24px 16px 8px;position:relative;z-index:1}
+.skyline{display:block;margin:0 auto 12px;max-width:500px;width:80%;height:60px}
+.header h1{font-family:'DM Sans',system-ui,sans-serif;font-size:clamp(20px,5vw,36px);font-weight:700;color:var(--gold);letter-spacing:-.5px}
+.header .subtitle{font-size:clamp(11px,2.5vw,15px);color:#a0a0b8;margin-top:4px}
+
+.game-container{display:flex;flex-direction:column;align-items:center;padding:8px 16px 100px;gap:12px;position:relative;z-index:1}
+
+.progress-bar-container{width:min(85vw,600px);height:6px;background:rgba(255,255,255,.08);border-radius:3px;position:relative;overflow:hidden}
+.progress-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--green-light),var(--gold));border-radius:3px;transition:width .5s ease-out;box-shadow:0 0 8px var(--gold-glow)}
+.progress-label{position:absolute;right:0;top:-18px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);opacity:.7}
+
+/* ==================== BOARD ==================== */
+.board-wrapper{position:relative;width:min(85vw,600px);aspect-ratio:1}
+
+.board{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  grid-template-rows:repeat(8,1fr);
+  width:100%;height:100%;
+  border:5px solid #3a2f27;
+  border-radius:12px;
+  overflow:hidden;
+  position:relative;z-index:1;
+  background:#2e2f31;
+  box-shadow:
+    inset 0 0 0 2px #2a2118,
+    0 0 0 2px #4a3f33,
+    0 0 0 6px #3a2f27,
+    0 8px 32px rgba(0,0,0,.5),
+    inset 0 0 40px rgba(0,0,0,.25);
+}
+
+/* Vignette */
+.board::after{content:'';position:absolute;inset:0;border-radius:7px;box-shadow:inset 0 0 50px rgba(0,0,0,.35);pointer-events:none;z-index:4}
+
+/* Corner decorations */
+.board-corner{position:absolute;width:20px;height:20px;z-index:5;pointer-events:none;opacity:.15}
+.board-corner svg{width:100%;height:100%}
+.board-corner.tl{top:6px;left:6px}
+.board-corner.tr{top:6px;right:6px;transform:scaleX(-1)}
+.board-corner.bl{bottom:6px;left:6px;transform:scaleY(-1)}
+.board-corner.br{bottom:6px;right:6px;transform:scale(-1)}
+
+/* Zone labels */
+.zone-label-wrap{position:absolute;left:-48px;top:0;bottom:0;width:40px;z-index:5;pointer-events:none}
+.zone-label{position:absolute;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;opacity:.45;white-space:nowrap;text-shadow:0 0 12px currentColor}
+
+/* ==================== CELLS ==================== */
+.cell{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.04);
+  font-size:clamp(9px,1.6vw,14px);font-weight:600;
+  position:relative;cursor:default;overflow:hidden;gap:1px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15);
+  transition:all .15s;
+}
+
+.cell:hover{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -1px 0 rgba(0,0,0,.15),0 0 14px rgba(255,159,63,.12);
+  transform:translateY(-1px);z-index:6;
+  background:rgba(255,255,255,.06)!important;
+}
+
+.cell .cell-num{font-family:'JetBrains Mono',monospace;font-size:clamp(7px,1.2vw,11px);line-height:1;opacity:.45;position:relative;z-index:2}
+.cell .cell-icon{font-size:clamp(11px,1.8vw,17px);line-height:1;position:relative;z-index:2}
+
+/* Player-here glow */
+.cell.player-here::before{content:'';position:absolute;inset:1px;border:2px solid var(--gold);animation:cellGlow 1.5s ease-in-out infinite;pointer-events:none;z-index:3}
+@keyframes cellGlow{0%,100%{opacity:.3;box-shadow:inset 0 0 8px var(--gold-glow)}50%{opacity:.7;box-shadow:inset 0 0 16px var(--gold-glow)}}
+
+/* ---- ZONE BACKGROUNDS ---- */
+
+/* Rows 1-2: The Garage (Seed) — brick texture */
+.row-1 .cell,.row-2 .cell{
+  background:
+    repeating-linear-gradient(90deg,rgba(139,90,60,.04) 0px,rgba(139,90,60,.04) 2px,transparent 2px,transparent 14px),
+    repeating-linear-gradient(0deg,rgba(139,90,60,.03) 0px,rgba(139,90,60,.03) 1px,transparent 1px,transparent 9px),
+    rgba(45,106,79,.12);
+  color:#a8e6cf;
+}
+
+/* Rows 3-4: The WeWork (Traction) — office grid */
+.row-3 .cell,.row-4 .cell{
+  background:
+    repeating-linear-gradient(90deg,rgba(126,165,229,.04) 0px,rgba(126,165,229,.04) 1px,transparent 1px,transparent 16px),
+    repeating-linear-gradient(0deg,rgba(126,165,229,.03) 0px,rgba(126,165,229,.03) 1px,transparent 1px,transparent 16px),
+    rgba(126,165,229,.08);
+  color:#a8c8f0;
+}
+
+/* Rows 5-6: The Pitch Room (Growth) — warm spotlight */
+.row-5 .cell,.row-6 .cell{
+  background:
+    radial-gradient(ellipse at 50% 50%,rgba(255,159,63,.08) 0%,transparent 70%),
+    rgba(255,159,63,.07);
+  color:#ffc89a;
+}
+
+/* Rows 7-8: The Penthouse (Series A) — diagonal celebration */
+.row-7 .cell,.row-8 .cell{
+  background:
+    repeating-linear-gradient(135deg,rgba(123,107,158,.05) 0px,rgba(123,107,158,.05) 1px,transparent 1px,transparent 10px),
+    repeating-linear-gradient(45deg,rgba(255,215,0,.02) 0px,rgba(255,215,0,.02) 1px,transparent 1px,transparent 10px),
+    rgba(123,107,158,.1);
+  color:#c4b8d8;
+}
+
+/* Zone divider borders */
+.row-2 .cell{border-bottom:1px solid rgba(126,165,229,.15)!important}
+.row-4 .cell{border-bottom:1px solid rgba(255,159,63,.15)!important}
+.row-6 .cell{border-bottom:1px solid rgba(123,107,158,.15)!important}
+
+/* Special cell types */
+.cell.ladder-from{background:linear-gradient(150deg,rgba(255,159,63,.22),rgba(255,159,63,.1))!important;border-left:2px solid rgba(255,159,63,.4)!important}
+.cell.chute-from{background:linear-gradient(150deg,rgba(230,57,70,.18),rgba(230,57,70,.08))!important;border-left:2px solid rgba(230,57,70,.35)!important}
+.cell.flavor-cell{border-left:2px solid rgba(244,241,234,.1)!important}
+
+.cell.sq-start{border:2px solid rgba(45,106,79,.35)!important;box-shadow:inset 0 0 12px rgba(45,106,79,.15),0 0 10px rgba(45,106,79,.12)}
+.cell.sq-final{border:2px solid rgba(255,215,0,.35)!important;animation:finalGlow 2.5s ease-in-out infinite}
+@keyframes finalGlow{
+  0%,100%{box-shadow:inset 0 0 12px rgba(255,215,0,.1),0 0 15px rgba(255,215,0,.1)}
+  50%{box-shadow:inset 0 0 18px rgba(255,215,0,.2),0 0 30px rgba(255,215,0,.2)}
+}
+
+/* ==================== SVG OVERLAY ==================== */
+.svg-overlay{position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.svg-overlay .ladder-group{filter:drop-shadow(0 0 4px rgba(255,159,63,.5));transition:opacity .3s,filter .3s}
+.svg-overlay .chute-group{filter:drop-shadow(0 0 3px rgba(230,57,70,.4));transition:opacity .3s,filter .3s}
+
+/* ==================== PLAYER ==================== */
+.player{position:absolute;width:clamp(24px,4.5vw,42px);height:clamp(24px,4.5vw,42px);z-index:10;transform:translate(-50%,-50%);transition:top .25s ease,left .25s ease;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,3.5vw,30px);filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));pointer-events:none}
+.player.bounce{animation:bounce .4s ease}
+@keyframes bounce{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-70%) scale(1.25)}}
+
+.trail-dot{position:absolute;width:7px;height:7px;background:var(--gold);border-radius:50%;z-index:9;pointer-events:none;animation:trailFade .6s ease-out forwards}
+@keyframes trailFade{from{opacity:.6;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.2)}}
+.landing-particle{position:absolute;width:5px;height:5px;border-radius:50%;z-index:9;pointer-events:none;animation:burstOut .5s ease-out forwards}
+@keyframes burstOut{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}
+
+.screen-flash{position:fixed;inset:0;z-index:99;pointer-events:none;animation:flashOut .5s ease-out forwards}
+.screen-flash.gold{background:rgba(255,159,63,.25)}.screen-flash.red{background:rgba(230,57,70,.25)}
+@keyframes flashOut{from{opacity:1}to{opacity:0}}
+
+.board-wrapper.shake-up{animation:shakeUp .4s ease-out}
+@keyframes shakeUp{0%{transform:translateY(0)}20%{transform:translateY(-6px)}40%{transform:translateY(3px)}60%{transform:translateY(-3px)}80%{transform:translateY(1px)}100%{transform:translateY(0)}}
+.board-wrapper.shake-down{animation:shakeDown .4s ease-out}
+@keyframes shakeDown{0%{transform:translateY(0)}20%{transform:translateY(8px)}40%{transform:translateY(-4px)}60%{transform:translateY(4px)}80%{transform:translateY(-2px)}100%{transform:translateY(0)}}
+
+/* ==================== CONTROLS ==================== */
+.controls{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center}
+.roll-btn{font-family:'DM Sans',system-ui,sans-serif;font-size:18px;font-weight:700;padding:14px 36px;background:var(--gold);color:#fff;border:none;border-radius:12px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 20px var(--gold-glow);min-width:160px;position:relative;overflow:hidden}
+.roll-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 28px var(--gold-glow),0 0 20px var(--gold-glow)}
+.roll-btn:active:not(:disabled){transform:translateY(0)}.roll-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.dice-display{font-size:52px;min-width:60px;text-align:center;line-height:1;perspective:200px}
+.dice-display.rolling-3d{animation:diceFlip .6s ease-out}
+@keyframes diceFlip{0%{transform:rotateX(0) rotateY(0) scale(1)}25%{transform:rotateX(180deg) rotateY(90deg) scale(.8)}50%{transform:rotateX(360deg) rotateY(180deg) scale(.9)}75%{transform:rotateX(540deg) rotateY(270deg) scale(.8)}100%{transform:rotateX(720deg) rotateY(360deg) scale(1)}}
+.dice-display.dice-land{animation:diceLand .3s ease-out}
+@keyframes diceLand{0%{transform:scale(1.5);filter:drop-shadow(0 0 20px var(--gold))}50%{transform:scale(.9)}100%{transform:scale(1);filter:drop-shadow(0 0 0 transparent)}}
+body.rumble{animation:screenRumble .3s ease-out}
+@keyframes screenRumble{0%,100%{transform:translate(0,0)}10%{transform:translate(-3px,2px)}30%{transform:translate(3px,-2px)}50%{transform:translate(-2px,-3px)}70%{transform:translate(2px,3px)}90%{transform:translate(-1px,1px)}}
+
+.game-info{font-size:14px;color:#8888aa;text-align:center}
+.game-info span{color:var(--gold);font-weight:600;font-family:'JetBrains Mono',monospace}
+.streak-badge{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);background:rgba(255,159,63,.1);border:1px solid rgba(255,159,63,.2);border-radius:20px;padding:4px 12px;display:none;margin-left:8px}
+.streak-badge.visible{display:inline-flex;animation:streakPop .3s ease-out}
+@keyframes streakPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.3);transform:scale(0);animation:rippleExpand .6s ease-out forwards;pointer-events:none}
+@keyframes rippleExpand{to{transform:scale(4);opacity:0}}
+.hover-particle{position:fixed;width:3px;height:3px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:60;animation:hoverFloat .6s ease-out forwards}
+@keyframes hoverFloat{from{opacity:.8;transform:translateY(0)}to{opacity:0;transform:translateY(-20px)}}
+
+/* ==================== MODAL ==================== */
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,10,20,.7);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.active{display:flex}
+.modal{background:var(--navy-light);border:1px solid rgba(255,255,255,.1);border-radius:16px;max-width:440px;width:100%;overflow:hidden;animation:modalIn .3s ease}
+@keyframes modalIn{from{transform:translateY(30px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.modal-header{padding:16px 20px;font-family:'DM Sans',system-ui,sans-serif;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.modal-header.ladder{background:rgba(255,159,63,.2);color:var(--gold)}
+.modal-header.chute{background:rgba(230,57,70,.2);color:var(--red)}
+.modal-header.flavor{background:rgba(100,100,140,.2);color:#c0c0d8}
+.modal-body{padding:20px;font-size:15px;line-height:1.6;color:#ddd}
+.modal-body strong{color:#fff;display:block;font-size:16px;margin-bottom:8px;line-height:1.4}
+.modal-body .move-info{margin-top:12px;padding:8px 12px;border-radius:8px;font-weight:600;font-size:13px}
+.modal-body .move-info.up{background:rgba(255,159,63,.15);color:var(--gold)}
+.modal-body .move-info.down{background:rgba(230,57,70,.15);color:var(--red)}
+.modal-footer{padding:12px 20px 16px;text-align:center}
+.modal-footer button{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;font-weight:600;padding:10px 32px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:8px;cursor:pointer;transition:background .15s,box-shadow .2s;position:relative;overflow:hidden}
+.modal-footer button:hover{background:rgba(255,255,255,.2);box-shadow:0 0 15px var(--gold-glow)}
+
+/* ==================== WIN OVERLAY ==================== */
+.win-overlay{position:fixed;inset:0;background:rgba(10,10,30,.95);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;text-align:center;overflow-y:auto}
+.win-overlay.active{display:flex}
+.win-overlay h2{font-family:'DM Sans',system-ui,sans-serif;font-size:clamp(28px,7vw,48px);font-weight:700;color:var(--gold);margin-bottom:8px;opacity:0}
+.win-overlay.active h2{animation:revealText .8s ease-out .5s both}
+@keyframes revealText{from{opacity:0;transform:translateY(30px) scale(.8);filter:blur(10px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.win-overlay .win-sub{font-size:clamp(14px,3vw,18px);color:#aaa;margin-bottom:28px;opacity:0}
+.win-overlay.active .win-sub{animation:fadeSlideUp .6s ease-out 1s both}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.win-overlay .program-info{background:rgba(255,159,63,.1);border:1px solid rgba(255,159,63,.3);border-radius:16px;padding:24px 28px;max-width:460px;margin-bottom:24px;opacity:0}
+.win-overlay.active .program-info{animation:fadeSlideUp .6s ease-out 1.5s both}
+.win-overlay .program-info h3{font-family:'DM Sans',system-ui,sans-serif;font-size:18px;color:var(--gold);margin-bottom:4px}
+.win-overlay .program-info .dates{font-size:14px;color:#bbb;margin-bottom:12px}
+.win-overlay .program-info p{font-size:13px;color:#999;line-height:1.6}
+.win-overlay .cta-btn{font-family:'DM Sans',system-ui,sans-serif;font-size:18px;font-weight:700;padding:16px 40px;background:var(--gold);color:#fff;border:none;border-radius:12px;cursor:pointer;text-decoration:none;display:inline-block;box-shadow:0 4px 24px var(--gold-glow);transition:transform .15s,box-shadow .15s;margin-bottom:16px;opacity:0;position:relative;overflow:hidden}
+.win-overlay.active .cta-btn{animation:fadeSlideUp .6s ease-out 1.9s both}
+.win-overlay .cta-btn:hover{transform:translateY(-2px);box-shadow:0 6px 32px var(--gold-glow),0 0 20px var(--gold-glow)}
+.win-overlay .share-btns{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;opacity:0}
+.win-overlay.active .share-btns{animation:fadeSlideUp .6s ease-out 2.2s both}
+.win-overlay .share-btns a{font-size:13px;font-weight:600;padding:8px 20px;border-radius:8px;text-decoration:none;transition:background .15s}
+.win-overlay .share-btns .tw{background:rgba(29,161,242,.2);color:#1da1f2;border:1px solid rgba(29,161,242,.3)}
+.win-overlay .share-btns .tw:hover{background:rgba(29,161,242,.35)}
+.win-overlay .share-btns .li{background:rgba(0,119,181,.2);color:#0077b5;border:1px solid rgba(0,119,181,.3)}
+.win-overlay .share-btns .li:hover{background:rgba(0,119,181,.35)}
+.win-overlay .play-again{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;font-weight:600;padding:10px 28px;background:rgba(255,255,255,.08);color:#ccc;border:1px solid rgba(255,255,255,.15);border-radius:8px;cursor:pointer;transition:background .15s;opacity:0;position:relative;overflow:hidden}
+.win-overlay.active .play-again{animation:fadeSlideUp .6s ease-out 2.5s both}
+.win-overlay .play-again:hover{background:rgba(255,255,255,.15)}
+.win-overlay .footer-note{margin-top:24px;font-size:11px;color:#555;opacity:0}
+.win-overlay.active .footer-note{animation:fadeSlideUp .6s ease-out 2.8s both}
+
+.firework{position:fixed;border-radius:50%;z-index:251;pointer-events:none;animation:fireworkBurst .8s ease-out forwards}
+@keyframes fireworkBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--fx),var(--fy)) scale(0)}}
+.confetti-container{position:fixed;inset:0;pointer-events:none;z-index:250;overflow:hidden}
+.confetti-piece{position:absolute;top:-20px;border-radius:2px;animation:confettiFall linear forwards}
+@keyframes confettiFall{to{top:110vh;transform:rotate(720deg)}}
+
+/* ==================== INTRO ==================== */
+.intro-overlay{position:fixed;inset:0;background:rgba(10,10,30,.97);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;text-align:center}
+.intro-overlay.hidden{display:none}
+.intro-overlay .pathlight-logo{opacity:0;animation:logoIn 1s ease-out .3s both}
+@keyframes logoIn{from{opacity:0;transform:scale(.7) translateY(20px);filter:blur(5px)}to{opacity:.9;transform:scale(1) translateY(0);filter:blur(0)}}
+.intro-overlay h1{font-family:'DM Sans',system-ui,sans-serif;font-size:clamp(24px,6vw,42px);font-weight:700;color:var(--gold);margin-bottom:12px;opacity:0;animation:titleReveal .8s ease-out .8s both}
+@keyframes titleReveal{from{opacity:0;transform:translateY(20px);letter-spacing:8px}to{opacity:1;transform:translateY(0);letter-spacing:-.5px}}
+.intro-overlay p{font-size:clamp(13px,3vw,16px);color:#aaa;max-width:480px;line-height:1.6;margin-bottom:8px;opacity:0}
+.intro-overlay p:nth-of-type(1){animation:fadeIn .6s ease-out 1.4s both}
+.intro-overlay p:nth-of-type(2){animation:fadeIn .6s ease-out 1.8s both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.intro-overlay .start-btn{font-family:'DM Sans',system-ui,sans-serif;font-size:20px;font-weight:700;padding:16px 48px;background:var(--gold);color:#fff;border:none;border-radius:14px;cursor:pointer;margin-top:24px;box-shadow:0 4px 24px var(--gold-glow);transition:transform .15s;opacity:0;animation:btnEntrance .6s ease-out 2.2s both;position:relative;overflow:hidden}
+@keyframes btnEntrance{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+.intro-overlay .start-btn:hover{transform:translateY(-2px) scale(1.02)}
+.start-btn-pulse{animation:pulse 2s ease-in-out infinite!important;opacity:1!important}
+@keyframes pulse{0%,100%{box-shadow:0 4px 24px var(--gold-glow)}50%{box-shadow:0 4px 40px rgba(255,159,63,.6)}}
+
+.legend{display:flex;gap:16px;font-size:12px;color:#888;flex-wrap:wrap;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+.legend-dot.ladder-dot{background:var(--gold)}.legend-dot.chute-dot{background:var(--red)}
+
+@media(max-width:767px){
+  .board-wrapper{width:95vw}.progress-bar-container{width:95vw}
+  .game-container{padding-bottom:140px}
+  .controls{position:fixed;bottom:0;left:0;right:0;background:var(--navy-light);border-top:1px solid rgba(255,255,255,.1);padding:12px 16px;z-index:50;justify-content:center}
+  .modal{position:fixed;bottom:0;left:0;right:0;max-width:100%;border-radius:16px 16px 0 0;animation:slideUp .3s ease}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-backdrop{align-items:flex-end;padding:0}
+  .zone-label-wrap{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="ambientCanvas"></canvas>
+
+<div class="intro-overlay" id="intro">
+  <img src="assets/brand-lockup-white.svg" alt="Pathlight" class="pathlight-logo" style="width:clamp(140px,30vw,220px);margin-bottom:20px;">
+  <h1>NYC GTM<br>Chutes & Ladders</h1>
+  <p>Navigate a founder's go-to-market journey through the streets of New York City. Roll the dice, dodge GTM mistakes, and climb your way to a Series A.</p>
+  <p style="color:#666;font-size:12px;margin-top:12px;">Inspired by the Pathlight NYC GTM Scale-Up Program</p>
+  <button class="start-btn" id="startBtn">Roll to Start</button>
+</div>
+
+<div class="header">
+  <svg class="skyline" viewBox="0 0 500 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="58" width="500" height="2" fill="#4a4b4d"/>
+    <rect x="20" y="30" width="18" height="28" fill="#3a3b3d" rx="1"/><rect x="42" y="22" width="14" height="36" fill="#3a3b3d" rx="1"/><rect x="60" y="35" width="20" height="23" fill="#3a3b3d" rx="1"/><rect x="84" y="18" width="12" height="40" fill="#3a3b3d" rx="1"/>
+    <rect x="110" y="8" width="16" height="50" fill="#454647" rx="1"/><rect x="114" y="2" width="8" height="8" fill="#454647" rx="1"/><rect x="116" y="0" width="4" height="4" fill="#ff9f3f" rx=".5"/>
+    <rect x="132" y="28" width="22" height="30" fill="#3a3b3d" rx="1"/><rect x="158" y="20" width="16" height="38" fill="#3a3b3d" rx="1"/><rect x="178" y="32" width="24" height="26" fill="#3a3b3d" rx="1"/><rect x="206" y="14" width="14" height="44" fill="#3a3b3d" rx="1"/>
+    <polygon points="240,58 244,6 248,4 252,6 256,58" fill="#454647"/><rect x="246" y="0" width="4" height="6" fill="#ff9f3f" rx=".5"/>
+    <rect x="264" y="26" width="18" height="32" fill="#3a3b3d" rx="1"/><rect x="286" y="34" width="20" height="24" fill="#3a3b3d" rx="1"/><rect x="310" y="20" width="14" height="38" fill="#3a3b3d" rx="1"/><rect x="328" y="30" width="22" height="28" fill="#3a3b3d" rx="1"/>
+    <rect x="356" y="12" width="14" height="46" fill="#454647" rx="1"/><polygon points="356,14 363,4 370,14" fill="#454647"/><circle cx="363" cy="5" r="2" fill="#ff9f3f"/>
+    <rect x="376" y="28" width="20" height="30" fill="#3a3b3d" rx="1"/><rect x="400" y="36" width="16" height="22" fill="#3a3b3d" rx="1"/><rect x="420" y="24" width="18" height="34" fill="#3a3b3d" rx="1"/><rect x="442" y="32" width="22" height="26" fill="#3a3b3d" rx="1"/><rect x="468" y="38" width="16" height="20" fill="#3a3b3d" rx="1"/>
+  </svg>
+  <img src="assets/brand-lockup-white.svg" alt="Pathlight" style="height:24px;margin-bottom:8px;opacity:.85;">
+  <h1>NYC GTM Chutes & Ladders</h1>
+  <p class="subtitle">A founder's journey from zero to Series A</p>
+</div>
+
+<div class="game-container">
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot ladder-dot"></div> Ladder (good GTM move)</div>
+    <div class="legend-item"><div class="legend-dot chute-dot"></div> Chute (GTM mistake)</div>
+  </div>
+  <div class="progress-bar-container">
+    <span class="progress-label" id="progressLabel">0%</span>
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <div class="board-wrapper" id="boardWrapper">
+    <!-- Zone labels -->
+    <div class="zone-label-wrap">
+      <div class="zone-label" style="bottom:2%;color:#a8e6cf">IDEA MAZE</div>
+      <div class="zone-label" style="bottom:27%;color:#a8c8f0">EARLY PMF</div>
+      <div class="zone-label" style="bottom:52%;color:#ffc89a">EARLY GTM</div>
+      <div class="zone-label" style="bottom:77%;color:#c4b8d8">SCALING</div>
+    </div>
+    <div class="board" id="board">
+      <!-- Corner decorations -->
+      <div class="board-corner tl"><svg viewBox="0 0 20 20"><path d="M0 0L8 0L8 2L2 2L2 8L0 8Z" fill="#f4f1ea"/></svg></div>
+      <div class="board-corner tr"><svg viewBox="0 0 20 20"><path d="M0 0L8 0L8 2L2 2L2 8L0 8Z" fill="#f4f1ea"/></svg></div>
+      <div class="board-corner bl"><svg viewBox="0 0 20 20"><path d="M0 0L8 0L8 2L2 2L2 8L0 8Z" fill="#f4f1ea"/></svg></div>
+      <div class="board-corner br"><svg viewBox="0 0 20 20"><path d="M0 0L8 0L8 2L2 2L2 8L0 8Z" fill="#f4f1ea"/></svg></div>
+    </div>
+    <svg class="svg-overlay" id="svgOverlay"></svg>
+    <div class="player" id="player">🚀</div>
+  </div>
+  <div class="controls">
+    <div class="dice-display" id="diceDisplay">🎲</div>
+    <button class="roll-btn" id="rollBtn">Roll Dice</button>
+    <div class="game-info">Square <span id="posDisplay">1</span> / 64 | Rolls: <span id="rollCount">0</span><span class="streak-badge" id="streakBadge"></span></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modal">
+    <div class="modal-header" id="modalHeader"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer"><button id="modalClose">Continue</button></div>
+  </div>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <h2>YOU CRUSHED IT.</h2>
+  <p class="win-sub" id="winSub"></p>
+  <div class="program-info">
+    <h3>Pathlight NYC GTM Scale-Up Program</h3>
+    <div class="dates">June 8 - July 31, 2026 &middot; 8 weeks &middot; Flatiron, NYC</div>
+    <p>An equity-free GTM bootcamp led by Charley Ma (ex-Ramp, Plaid, Alloy) and Mahdi Raza (ex-Robinhood). Guest speakers from Ramp, Clay, ElevenLabs, Apollo.io, Harvey, Retool, Modal, and more.</p>
+  </div>
+  <a class="cta-btn" href="mailto:charley@pathlight.vc?subject=NYC%20GTM%20Scale-Up%20Program%20%E2%80%93%20Interested!">Apply Now &rarr; charley@pathlight.vc</a>
+  <div class="share-btns">
+    <a class="tw" id="tweetBtn" href="#" target="_blank" rel="noopener">Share on X</a>
+    <a class="li" id="linkedinBtn" href="#" target="_blank" rel="noopener">Share on LinkedIn</a>
+  </div>
+  <button class="play-again" id="playAgain">Play Again</button>
+  <div class="footer-note">Built with &#10084; in Flatiron by Pathlight</div>
+</div>
+
+<div class="confetti-container" id="confetti"></div>
+
+<script>
+const BOARD_SIZE=64, COLS=8, ROWS=8;
+
+const LADDERS={
+  3:{to:12,icon:'\uD83C\uDFAF',title:"You defined an opinionated ICP on day one.",body:"Week 2 of Pathlight paying off. You know exactly who you're building for."},
+  7:{to:18,icon:'\u2B50',title:"You got into Pathlight's GTM Scale-Up Program.",body:"8 weeks with Charley and Mahdi? Your GTM just went from 'vibes' to 'system.'"},
+  10:{to:20,icon:'\uD83D\uDC42',title:"You found PMF by actually listening to customers.",body:"Radical concept. The AI era rewards it."},
+  15:{to:26,icon:'\u2709\uFE0F',title:"You cold-emailed a prospect with a hyper-personalized first line.",body:"They replied in 4 minutes. Meeting booked."},
+  19:{to:30,icon:'\uD83D\uDCB2',title:"Your pricing page is clear, value-based, and has three tiers.",body:"A prospect just self-served to the Growth plan. No sales call needed."},
+  22:{to:32,icon:'\uD83E\uDDF1',title:"You ran a Clay enrichment workflow that identified 500 perfect-fit accounts.",body:"Clay's guest speaker session was worth it."},
+  25:{to:36,icon:'\uD83E\uDD1D',title:"You nailed your sales negotiation \u2014 held firm on pricing.",body:"The prospect respected it. Contract signed, full price."},
+  28:{to:38,icon:'\uD83D\uDCCB',title:"You built a repeatable outbound playbook before hiring a single SDR.",body:"Now you can actually onboard them with a real process."},
+  33:{to:44,icon:'\uD83D\uDCC8',title:"A Ramp growth lead shared their exact channel strategy at Pathlight.",body:"You just skipped 6 months of experimentation."},
+  37:{to:47,icon:'\uD83D\uDD25',title:"You launched on LinkedIn with a founder story that went viral.",body:"50K impressions, 200 inbound signups. Your DMs are a mess (the good kind)."},
+  40:{to:50,icon:'\uD83C\uDFE2',title:"You closed your first enterprise deal via a warm intro from the Pathlight network.",body:"The Flatiron cohort effect is real."},
+  43:{to:52,icon:'\uD83D\uDCDD',title:"Your end-to-end GTM motion is documented and repeatable.",body:"Week 8 deliverable: crushed. You have a system, not a hope."},
+  46:{to:55,icon:'\uD83D\uDE80',title:"You used Apollo.io to build a pipeline of 1,000 qualified leads.",body:"The Apollo speaker wasn't kidding \u2014 intent data is a cheat code."},
+  49:{to:57,icon:'\u2615',title:"An investor at a Flatiron coffee shop overheard your pitch and asked for your deck.",body:"Only in New York."},
+  53:{to:61,icon:'\uD83D\uDCE6',title:"You packaged your product so well that customers upgrade themselves.",body:"Pricing & packaging week was the real inflection point."},
+  58:{to:63,icon:'\uD83D\uDCCA',title:"Retool's growth playbook helped you build an internal dashboard tracking every GTM metric.",body:"You're operating on data, not feelings."},
+};
+
+const CHUTES={
+  11:{to:4,icon:'\uD83D\uDD07',title:"You built the product for 6 months without talking to a single customer.",body:"The code is beautiful though."},
+  16:{to:6,icon:'\uD83D\uDCE8',title:"You spammed 10,000 cold emails with no ICP.",body:"Your domain is now blacklisted. Enjoy the spam folder."},
+  21:{to:9,icon:'\uD83D\uDC54',title:"You hired a VP of Sales before closing your first 10 deals.",body:"They just asked for a $400K OTE and a sales engineer."},
+  27:{to:17,icon:'\uD83D\uDCFA',title:"You spent $50K on a Times Square billboard for a B2B dev tool.",body:"Congrats, your mom saw it. Nobody else converted."},
+  34:{to:23,icon:'\uD83C\uDD93',title:"Your 'freemium' tier is so generous nobody ever upgrades.",body:"You're running a charity, not a company."},
+  39:{to:29,icon:'\u23F0',title:"You gave a 90-minute demo when the prospect had 30 minutes.",body:"They 'lost connection' at minute 31."},
+  45:{to:35,icon:'\uD83C\uDFF7\uFE0F',title:"You priced your product at $9/mo because you were 'afraid to charge more.'",body:"Your CAC is $800. Do the math."},
+  51:{to:41,icon:'\uD83E\uDD16',title:"You built an AI wrapper and told VCs you have 'proprietary technology.'",body:"They asked one technical question. You said 'we use GPT-4.'"},
+  56:{to:48,icon:'\uD83D\uDC6F',title:"You hired your college roommate as Head of Marketing because they 'get' your vision.",body:"Their marketing plan is 'vibes-based.'"},
+  62:{to:54,icon:'\uD83D\uDCE2',title:"You announced a Series A on Twitter before the wire hit.",body:"The deal fell through. The tweet is still up."},
+};
+
+const FLAVOR={
+  1:{icon:'\uD83D\uDCBC',text:"You just quit your FAANG job. Your Slack is quiet for the first time in 5 years. It's terrifying and exhilarating."},
+  5:{icon:'\uD83D\uDECB\uFE0F',text:"You're working from a WeWork in SoHo. The kombucha is free but the desk is $800/month."},
+  8:{icon:'\uD83C\uDFA7',text:"First customer discovery call. They talked for 45 minutes. You said 12 words. This is the way."},
+  13:{icon:'\uD83E\uDD16',text:"You went to a NYC founder meetup in the Lower East Side. 40 people. 38 were also 'building in AI.'"},
+  18:{icon:'\uD83E\uDD64',text:"You grabbed coffee at Joe & The Juice before a pitch meeting. The $14 smoothie is a business expense now."},
+  24:{icon:'\uD83D\uDCB5',text:"You got your first paying customer. They Venmo'd you $50. Revenue is revenue."},
+  29:{icon:'\uD83D\uDE87',text:"You ran into another founder from your batch on the L train. They just raised. You pretended to be happy."},
+  32:{icon:'\uD83D\uDDFD',text:"HALFWAY THERE. You're not a tourist anymore. You're a real NYC founder."},
+  36:{icon:'\uD83D\uDC7B',text:"A prospect ghosted you after 3 great calls. NYC dating has prepared you for this."},
+  42:{icon:'\u26A1',text:"You attended a Pathlight session in Flatiron. The frameworks are clicking. GTM isn't magic \u2014 it's a system."},
+  48:{icon:'\uD83C\uDF63',text:"You just signed a $50K annual contract. You celebrated at an overpriced omakase in the East Village."},
+  55:{icon:'\uD83D\uDCC4',text:"Your board deck looks like a real company now. Slide 7 even has a waterfall chart."},
+  59:{icon:'\uD83D\uDCF1',text:"Three VCs reached out to YOU this week. The tables have turned."},
+  60:{icon:'\uD83C\uDF55',text:"Term sheet on the table. Your lawyer is reviewing. You're stress-eating dollar pizza on Broadway."},
+  64:{icon:'\uD83C\uDFC6',text:"YOU CRUSHED YOUR SERIES A. From zero GTM to a funded, repeatable growth machine. The Pathlight journey continues."},
+};
+
+// DOM
+const board=document.getElementById('board'),boardWrapper=document.getElementById('boardWrapper'),svgOverlay=document.getElementById('svgOverlay'),playerEl=document.getElementById('player'),rollBtn=document.getElementById('rollBtn'),diceDisplay=document.getElementById('diceDisplay'),posDisplay=document.getElementById('posDisplay'),rollCountEl=document.getElementById('rollCount'),modalBackdrop=document.getElementById('modalBackdrop'),modalHeader=document.getElementById('modalHeader'),modalBody=document.getElementById('modalBody'),modalClose=document.getElementById('modalClose'),winOverlay=document.getElementById('winOverlay'),winSub=document.getElementById('winSub'),introOverlay=document.getElementById('intro'),startBtn=document.getElementById('startBtn'),confettiContainer=document.getElementById('confetti'),progressFill=document.getElementById('progressFill'),progressLabel=document.getElementById('progressLabel'),streakBadge=document.getElementById('streakBadge'),ambientCanvas=document.getElementById('ambientCanvas');
+const cellElements={},SVG_NS='http://www.w3.org/2000/svg',isMobile=window.matchMedia('(max-width:767px)').matches;
+
+// Ambient particles
+const ctx=ambientCanvas.getContext('2d'),PC=isMobile?20:40,parts=[];
+function resizeCanvas(){ambientCanvas.width=innerWidth;ambientCanvas.height=innerHeight}
+class P{constructor(s){this.r2(s)}r2(s){this.x=Math.random()*ambientCanvas.width;this.y=s?Math.random()*ambientCanvas.height:ambientCanvas.height+10;this.r=1+Math.random()*2;this.c=['#ff9f3f','#7ea5e5','#f4f1ea'][Math.floor(Math.random()*3)];this.a=.12+Math.random()*.18;this.vy=-(0.15+Math.random()*.25);this.so=Math.random()*Math.PI*2;this.ss=.01+Math.random()*.015}u(){this.y+=this.vy;this.x+=Math.sin(this.so)*.2;this.so+=this.ss;if(this.y<-10)this.r2(false)}d(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=this.c;ctx.globalAlpha=this.a;ctx.fill()}}
+function initP(){resizeCanvas();for(let i=0;i<PC;i++)parts.push(new P(true));aP()}
+function aP(){if(!document.hidden){ctx.clearRect(0,0,ambientCanvas.width,ambientCanvas.height);parts.forEach(p=>{p.u();p.d()});ctx.globalAlpha=1}requestAnimationFrame(aP)}
+window.addEventListener('resize',resizeCanvas);initP();
+
+// Board generation
+function buildBoard(){
+  // Remove old cells but keep corner decorations
+  board.querySelectorAll('.cell').forEach(el=>el.remove());
+  for(let row=ROWS;row>=1;row--){
+    const rd=document.createElement('div');rd.style.display='contents';rd.className=`row-${row}`;
+    for(let col=0;col<COLS;col++){
+      let sq=row%2===1?(row-1)*COLS+col+1:(row-1)*COLS+(COLS-1-col)+1;
+      const cell=document.createElement('div');cell.className='cell';cell.dataset.sq=sq;
+      const n=document.createElement('span');n.className='cell-num';n.textContent=sq;cell.appendChild(n);
+      if(LADDERS[sq]){cell.classList.add('ladder-from');const ic=document.createElement('span');ic.className='cell-icon';ic.textContent=LADDERS[sq].icon;cell.appendChild(ic)}
+      else if(CHUTES[sq]){cell.classList.add('chute-from');const ic=document.createElement('span');ic.className='cell-icon';ic.textContent=CHUTES[sq].icon;cell.appendChild(ic)}
+      else if(FLAVOR[sq]){cell.classList.add('flavor-cell');const ic=document.createElement('span');ic.className='cell-icon';ic.textContent=FLAVOR[sq].icon;cell.appendChild(ic)}
+      if(sq===1)cell.classList.add('sq-start');
+      if(sq===BOARD_SIZE)cell.classList.add('sq-final');
+      cellElements[sq]=cell;rd.appendChild(cell);
+    }
+    board.appendChild(rd);
+  }
+}
+
+// SVG helpers
+function cSVG(t,a){const e=document.createElementNS(SVG_NS,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e}
+function getCellCenter(sq){const c=cellElements[sq];if(!c)return{x:0,y:0};const br=board.getBoundingClientRect(),cr=c.getBoundingClientRect();return{x:cr.left+cr.width/2-br.left,y:cr.top+cr.height/2-br.top}}
+
+function drawLadder(a,b,f){
+  const g=cSVG('g',{'data-from':f,'class':'ladder-group',opacity:'.5'});
+  const dx=b.x-a.x,dy=b.y-a.y,l=Math.sqrt(dx*dx+dy*dy);if(!l)return;
+  const hw=5,px=(-dy/l)*hw,py=(dx/l)*hw;
+  g.appendChild(cSVG('line',{x1:a.x+px,y1:a.y+py,x2:b.x+px,y2:b.y+py,stroke:'#ff9f3f','stroke-width':'2.5','stroke-linecap':'round'}));
+  g.appendChild(cSVG('line',{x1:a.x-px,y1:a.y-py,x2:b.x-px,y2:b.y-py,stroke:'#ff9f3f','stroke-width':'2.5','stroke-linecap':'round'}));
+  const n=Math.max(3,Math.floor(l/16));
+  for(let i=1;i<=n;i++){const t=i/(n+1),mx=a.x+dx*t,my=a.y+dy*t;g.appendChild(cSVG('line',{x1:mx+px,y1:my+py,x2:mx-px,y2:my-py,stroke:'#ff9f3f','stroke-width':'1.5','stroke-linecap':'round',opacity:'.5'}))}
+  svgOverlay.appendChild(g);
+}
+
+function drawChute(a,b,f){
+  const g=cSVG('g',{'data-from':f,'class':'chute-group',opacity:'.45'});
+  const dx=b.x-a.x,dy=b.y-a.y,l=Math.sqrt(dx*dx+dy*dy);if(!l)return;
+  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,cu=l*.22,cpx=mx+(-dy/l)*cu,cpy=my+(dx/l)*cu;
+  const hw=4.5,px=(-dy/l)*hw,py=(dx/l)*hw;
+  g.appendChild(cSVG('path',{d:`M ${a.x+px} ${a.y+py} Q ${cpx+px} ${cpy+py} ${b.x+px} ${b.y+py} L ${b.x-px} ${b.y-py} Q ${cpx-px} ${cpy-py} ${a.x-px} ${a.y-py} Z`,fill:'rgba(230,57,70,.04)',stroke:'none'}));
+  g.appendChild(cSVG('path',{d:`M ${a.x+px} ${a.y+py} Q ${cpx+px} ${cpy+py} ${b.x+px} ${b.y+py}`,stroke:'#E63946','stroke-width':'1.8',fill:'none','stroke-linecap':'round'}));
+  g.appendChild(cSVG('path',{d:`M ${a.x-px} ${a.y-py} Q ${cpx-px} ${cpy-py} ${b.x-px} ${b.y-py}`,stroke:'#E63946','stroke-width':'1.8',fill:'none','stroke-linecap':'round'}));
+  g.appendChild(cSVG('path',{d:`M ${a.x} ${a.y} Q ${cpx} ${cpy} ${b.x} ${b.y}`,stroke:'#E63946','stroke-width':'1',fill:'none','stroke-dasharray':'4,6',opacity:'.3','class':'chute-center-path'}));
+  svgOverlay.appendChild(g);
+}
+
+function drawConnections(){
+  const w=board.offsetWidth,h=board.offsetHeight;svgOverlay.setAttribute('viewBox',`0 0 ${w} ${h}`);svgOverlay.innerHTML='';
+  for(const[f,d]of Object.entries(LADDERS))drawLadder(getCellCenter(+f),getCellCenter(d.to),+f);
+  for(const[f,d]of Object.entries(CHUTES))drawChute(getCellCenter(+f),getCellCenter(d.to),+f);
+}
+
+// Activation animations
+function flashLadder(sq){const g=svgOverlay.querySelector(`.ladder-group[data-from="${sq}"]`);if(!g)return;g.setAttribute('opacity','1');g.style.filter='drop-shadow(0 0 10px #ff9f3f) drop-shadow(0 0 20px rgba(255,159,63,.5))';g.querySelectorAll('line').forEach(l=>{const w=+l.getAttribute('stroke-width');l.setAttribute('stroke-width',w+1.5);l._ow=w});setTimeout(()=>{g.setAttribute('opacity','.5');g.style.filter='';g.querySelectorAll('line').forEach(l=>{if(l._ow!=null)l.setAttribute('stroke-width',l._ow)})},800)}
+
+function flashChute(sq){const g=svgOverlay.querySelector(`.chute-group[data-from="${sq}"]`);if(!g)return;g.setAttribute('opacity','1');g.style.filter='drop-shadow(0 0 8px #E63946) drop-shadow(0 0 16px rgba(230,57,70,.4))';const cp=g.querySelector('.chute-center-path');if(cp){const tl=cp.getTotalLength();const dot=cSVG('circle',{r:'3.5',fill:'#E63946'});dot.style.filter='drop-shadow(0 0 4px #E63946)';g.appendChild(dot);let st;function an(ts){if(!st)st=ts;const t=Math.min((ts-st)/800,1);const p=cp.getPointAtLength(t*tl);dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);if(t<1)requestAnimationFrame(an);else{dot.remove();g.setAttribute('opacity','.45');g.style.filter=''}}requestAnimationFrame(an)}else{setTimeout(()=>{g.setAttribute('opacity','.45');g.style.filter=''},800)}}
+
+function triggerFlash(t){const el=document.createElement('div');el.className=`screen-flash ${t}`;document.body.appendChild(el);setTimeout(()=>el.remove(),500)}
+function triggerBoardShake(d){boardWrapper.classList.add(`shake-${d}`);setTimeout(()=>boardWrapper.classList.remove(`shake-${d}`),400)}
+
+// Particles
+function emitLandingBurst(x,y,count,color){const cs=color?[color]:['#ff9f3f','#f4f1ea','#7ea5e5','#d8932e'];const n=isMobile?Math.ceil(count/2):count;for(let i=0;i<n;i++){const el=document.createElement('div');el.className='landing-particle';el.style.left=x+'px';el.style.top=y+'px';el.style.backgroundColor=cs[Math.floor(Math.random()*cs.length)];const a=(Math.PI*2*i)/n+(Math.random()-.5)*.5,d=18+Math.random()*22;el.style.setProperty('--dx',Math.cos(a)*d+'px');el.style.setProperty('--dy',Math.sin(a)*d+'px');boardWrapper.appendChild(el);setTimeout(()=>el.remove(),500)}}
+function emitTrailDot(x,y){const d=document.createElement('div');d.className='trail-dot';d.style.left=x+'px';d.style.top=y+'px';boardWrapper.appendChild(d);setTimeout(()=>d.remove(),600)}
+
+// Player
+let position=1,rolls=0,streak=0,isAnimating=false;
+
+function movePlayerTo(sq){const c=cellElements[sq];if(!c)return;const br=boardWrapper.getBoundingClientRect(),cr=c.getBoundingClientRect();playerEl.style.left=(cr.left+cr.width/2-br.left)+'px';playerEl.style.top=(cr.top+cr.height/2-br.top)+'px';document.querySelector('.cell.player-here')?.classList.remove('player-here');c.classList.add('player-here')}
+function updatePosition(){posDisplay.textContent=position;movePlayerTo(position);updateProgress()}
+function updateProgress(){const p=Math.round((position/BOARD_SIZE)*100);progressFill.style.width=p+'%';progressLabel.textContent=p+'%'}
+function updateStreak(){if(streak>=3){streakBadge.textContent='\uD83D\uDD25 '+streak+' streak';streakBadge.classList.add('visible')}else streakBadge.classList.remove('visible')}
+
+// Game loop
+const diceFaces=['\u2680','\u2681','\u2682','\u2683','\u2684','\u2685'];
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function animateSteps(from,to){const dir=to>from?1:-1;let cur=from;while(cur!==to){cur+=dir;position=cur;const c=cellElements[cur];if(c){const br=boardWrapper.getBoundingClientRect(),cr=c.getBoundingClientRect();const x=cr.left+cr.width/2-br.left,y=cr.top+cr.height/2-br.top;playerEl.style.left=x+'px';playerEl.style.top=y+'px';emitTrailDot(x,y)}await sleep(180)}}
+
+function getPlayerXY(){const c=cellElements[position];if(!c)return{x:0,y:0};const br=boardWrapper.getBoundingClientRect(),cr=c.getBoundingClientRect();return{x:cr.left+cr.width/2-br.left,y:cr.top+cr.height/2-br.top}}
+
+async function handleRoll(){
+  if(isAnimating)return;isAnimating=true;rollBtn.disabled=true;
+  const roll=Math.ceil(Math.random()*6);rolls++;rollCountEl.textContent=rolls;
+  diceDisplay.classList.add('rolling-3d');for(let i=0;i<6;i++){diceDisplay.textContent=diceFaces[Math.floor(Math.random()*6)];await sleep(80)}diceDisplay.classList.remove('rolling-3d');
+  diceDisplay.textContent=diceFaces[roll-1];diceDisplay.classList.add('dice-land');setTimeout(()=>diceDisplay.classList.remove('dice-land'),300);
+  if(roll>=5){document.body.classList.add('rumble');setTimeout(()=>document.body.classList.remove('rumble'),300)}
+  await sleep(350);
+
+  let np=position+roll;
+  if(np>BOARD_SIZE){const ov=np-BOARD_SIZE;await animateSteps(position,BOARD_SIZE);await sleep(150);np=BOARD_SIZE-ov;await animateSteps(BOARD_SIZE,np)}else{await animateSteps(position,np)}
+  position=np;posDisplay.textContent=position;updateProgress();movePlayerTo(position);
+  const pos=getPlayerXY();emitLandingBurst(pos.x,pos.y,8);
+  playerEl.classList.add('bounce');setTimeout(()=>playerEl.classList.remove('bounce'),400);await sleep(200);
+
+  if(position===BOARD_SIZE){await showSquareEvent(BOARD_SIZE);await sleep(300);showWin();isAnimating=false;return}
+
+  if(LADDERS[position]){const l=LADDERS[position];triggerFlash('gold');triggerBoardShake('up');flashLadder(position);emitLandingBurst(pos.x,pos.y,12,'#ff9f3f');await showModal('ladder',position,l);await animateSteps(position,l.to);position=l.to;posDisplay.textContent=position;updateProgress();movePlayerTo(position);playerEl.classList.add('bounce');setTimeout(()=>playerEl.classList.remove('bounce'),400);streak++;updateStreak()}
+  else if(CHUTES[position]){const c=CHUTES[position];triggerFlash('red');triggerBoardShake('down');flashChute(position);emitLandingBurst(pos.x,pos.y,12,'#E63946');await showModal('chute',position,c);await animateSteps(position,c.to);position=c.to;posDisplay.textContent=position;updateProgress();movePlayerTo(position);playerEl.classList.add('bounce');setTimeout(()=>playerEl.classList.remove('bounce'),400);streak=0;updateStreak()}
+  else if(FLAVOR[position]){await showFlavorModal(position);streak++;updateStreak()}
+  else{streak++;updateStreak()}
+  isAnimating=false;rollBtn.disabled=false;
+}
+
+// Modals
+let modalResolve=null;
+function showModal(type,sq,data){return new Promise(resolve=>{modalResolve=resolve;modalHeader.className=type==='ladder'?'modal-header ladder':'modal-header chute';modalHeader.innerHTML=type==='ladder'?`${data.icon} Ladder! Square ${sq} &rarr; ${data.to}`:`${data.icon} Chute! Square ${sq} &rarr; ${data.to}`;const mc=type==='ladder'?'up':'down',mt=type==='ladder'?`Climb up to square ${data.to}!`:`Slide down to square ${data.to}!`;modalBody.innerHTML=`<strong>${data.title}</strong>${data.body}<div class="move-info ${mc}">${mt}</div>`;modalBackdrop.classList.add('active')})}
+function showFlavorModal(sq){return new Promise(resolve=>{modalResolve=resolve;modalHeader.className='modal-header flavor';modalHeader.innerHTML=`${FLAVOR[sq].icon} Square ${sq}`;modalBody.innerHTML=`<p>${FLAVOR[sq].text}</p>`;modalBackdrop.classList.add('active')})}
+function showSquareEvent(sq){if(FLAVOR[sq])return showFlavorModal(sq);return Promise.resolve()}
+function closeModal(){modalBackdrop.classList.remove('active');if(modalResolve){const r=modalResolve;modalResolve=null;r()}}
+modalClose.addEventListener('click',closeModal);
+modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)closeModal()});
+
+// Win
+function showWin(){winSub.textContent=`From zero GTM to Series A in ${rolls} rolls.`;const u=location.href;document.getElementById('tweetBtn').href=`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just crushed my Series A in ${rolls} rolls on the Pathlight GTM Chutes & Ladders game! 🎲\n\n${u}`)}`;document.getElementById('linkedinBtn').href=`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(u)}`;launchFireworks();setTimeout(()=>winOverlay.classList.add('active'),400);setTimeout(launchConfetti,1000)}
+document.getElementById('playAgain').addEventListener('click',()=>{winOverlay.classList.remove('active');confettiContainer.innerHTML='';position=1;rolls=0;streak=0;rollCountEl.textContent=0;posDisplay.textContent=1;streakBadge.classList.remove('visible');progressFill.style.width='0%';progressLabel.textContent='0%';updatePosition();rollBtn.disabled=false});
+
+// Fireworks + confetti
+function launchFireworks(){const cs=['#ff9f3f','#f4f1ea','#d8932e','#7ea5e5','#E63946'];for(let b=0;b<5;b++){setTimeout(()=>{const cx=.15*innerWidth+Math.random()*.7*innerWidth,cy=.1*innerHeight+Math.random()*.5*innerHeight,n=isMobile?10:20;for(let i=0;i<n;i++){const el=document.createElement('div');el.className='firework';el.style.left=cx+'px';el.style.top=cy+'px';el.style.backgroundColor=cs[Math.floor(Math.random()*cs.length)];const a=(Math.PI*2*i)/n+(Math.random()-.5)*.5,d=50+Math.random()*90;el.style.setProperty('--fx',Math.cos(a)*d+'px');el.style.setProperty('--fy',Math.sin(a)*d+'px');el.style.animationDuration=(.6+Math.random()*.4)+'s';el.style.width=(3+Math.random()*4)+'px';el.style.height=el.style.width;confettiContainer.appendChild(el);setTimeout(()=>el.remove(),1200)}},b*300)}}
+function launchConfetti(){const cs=['#ff9f3f','#f4f1ea','#d8932e','#7ea5e5','#fff','#2d6a4f'];const n=isMobile?100:200;for(let i=0;i<n;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.left=Math.random()*100+'vw';p.style.backgroundColor=cs[Math.floor(Math.random()*cs.length)];const w=Math.random()*8+4,h=Math.random()*8+4;p.style.width=w+'px';p.style.height=h+'px';p.style.animationDuration=(Math.random()*2+2)+'s';p.style.animationDelay=(Math.random()*2)+'s';p.style.borderRadius=Math.random()>.6?'50%':'2px';if(Math.random()>.85){p.style.clipPath='polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)';p.style.width=(w+4)+'px';p.style.height=(h+4)+'px'}confettiContainer.appendChild(p)}setTimeout(()=>confettiContainer.innerHTML='',6000)}
+
+// Micro-interactions
+document.addEventListener('click',e=>{const btn=e.target.closest('.roll-btn,.modal-footer button,.start-btn,.cta-btn,.play-again');if(btn){const r=btn.getBoundingClientRect(),rp=document.createElement('div');rp.className='ripple';rp.style.left=(e.clientX-r.left)+'px';rp.style.top=(e.clientY-r.top)+'px';rp.style.width='10px';rp.style.height='10px';btn.appendChild(rp);setTimeout(()=>rp.remove(),600)}});
+let hI;rollBtn.addEventListener('mouseenter',()=>{hI=setInterval(()=>{const r=rollBtn.getBoundingClientRect(),d=document.createElement('div');d.className='hover-particle';d.style.left=(r.left+Math.random()*r.width)+'px';d.style.top=(r.top-2)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),600)},80)});rollBtn.addEventListener('mouseleave',()=>clearInterval(hI));
+
+// Init
+setTimeout(()=>startBtn.classList.add('start-btn-pulse'),2800);
+startBtn.addEventListener('click',()=>{introOverlay.classList.add('hidden');buildBoard();requestAnimationFrame(()=>requestAnimationFrame(()=>{drawConnections();updatePosition()}))});
+rollBtn.addEventListener('click',handleRoll);
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(!introOverlay.classList.contains('hidden'))return;drawConnections();movePlayerTo(position)},150)});
+document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Enter'){if(modalBackdrop.classList.contains('active')){e.preventDefault();closeModal()}else if(!isAnimating&&introOverlay.classList.contains('hidden')&&!winOverlay.classList.contains('active')){e.preventDefault();handleRoll()}else if(!introOverlay.classList.contains('hidden')){e.preventDefault();startBtn.click()}}});
+</script>
+</body>
+</html>
