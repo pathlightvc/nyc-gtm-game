@@ -29,10 +29,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--navy);color:var
 @keyframes ambientGradient{0%,100%{background:radial-gradient(ellipse at 30% 50%,#32333a 0%,#2b2c2d 60%)}50%{background:radial-gradient(ellipse at 70% 40%,#2f3035 0%,#2b2c2d 60%)}}
 #ambientCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6}
 
-.header{text-align:center;padding:12px 16px 4px;position:relative;z-index:1}
-.header .pathlight-brand{height:clamp(32px,4.5vw,44px);margin-bottom:6px;opacity:.95}
-.header h1{font-family:'DM Sans',system-ui,sans-serif;font-size:clamp(17px,3.8vw,26px);font-weight:700;color:var(--gold);letter-spacing:-.5px;line-height:1.1}
-.header .subtitle{font-size:clamp(10px,2.1vw,13px);color:#a0a0b8;margin-top:2px}
+.header{text-align:center;padding:8px 16px 2px;position:relative;z-index:2}
+.header .pathlight-brand{position:absolute;top:10px;left:16px;height:clamp(20px,2.4vw,26px);margin:0;opacity:.85}
+.header h1{font-family:'DM Sans',system-ui,sans-serif;font-size:clamp(15px,3vw,22px);font-weight:700;color:var(--gold);letter-spacing:-.5px;line-height:1.1;margin-top:0}
+.header .subtitle{font-size:clamp(10px,2vw,12px);color:#a0a0b8;margin-top:2px}
 
 .game-container{display:flex;flex-direction:column;align-items:center;padding:4px 16px 12px;gap:6px;position:relative;z-index:1}
 
@@ -43,7 +43,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--navy);color:var
 .progress-label{position:absolute;right:0;top:-14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);opacity:.7}
 
 /* ==================== BOARD ==================== */
-.board-wrapper{position:relative;width:min(94vw,calc(100vh - 190px));width:min(94vw,calc(100dvh - 190px));aspect-ratio:1}
+.board-wrapper{position:relative;width:min(94vw,calc(100vh - 150px));width:min(94vw,calc(100dvh - 150px));aspect-ratio:1}
 
 .board{
   display:grid;
@@ -292,7 +292,8 @@ body.rumble{animation:screenRumble .3s ease-out}
 .legend-dot.ladder-dot{background:var(--gold)}.legend-dot.chute-dot{background:var(--red)}
 
 @media(max-width:767px){
-  .board-wrapper{width:min(95vw,calc(100vh - 230px));width:min(95vw,calc(100dvh - 230px))}
+  .header .pathlight-brand{top:8px;left:10px}
+  .board-wrapper{width:min(95vw,calc(100vh - 200px));width:min(95vw,calc(100dvh - 200px))}
   .progress-bar-container{width:95vw}
   .game-container{padding-bottom:96px}
   .controls{position:fixed;bottom:0;left:0;right:0;background:var(--navy-light);border-top:1px solid rgba(255,255,255,.1);padding:8px 16px;z-index:50;justify-content:center;gap:12px}
