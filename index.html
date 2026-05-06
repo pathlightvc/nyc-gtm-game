@@ -623,7 +623,7 @@ modalClose.addEventListener('click',closeModal);
 modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)closeModal()});
 
 // Win
-function showWin(){winSub.textContent=`From zero GTM to Series A in ${rolls} rolls.`;const u=location.href;document.getElementById('tweetBtn').href=`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just crushed my Series A in ${rolls} rolls on the Pathlight GTM Chutes & Ladders game! 🎲\n\n${u}`)}`;document.getElementById('linkedinBtn').href=`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(u)}`;launchFireworks();setTimeout(()=>winOverlay.classList.add('active'),400);setTimeout(launchConfetti,1000)}
+function showWin(){winSub.textContent=`From zero GTM to Series A in ${rolls} rolls.`;const u=location.href;document.getElementById('tweetBtn').href=`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just crushed my Series A in ${rolls} rolls on the @PathlightVC GTM Chutes & Ladders game! 🎲\n\n${u}`)}`;document.getElementById('linkedinBtn').href=`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(u)}`;launchFireworks();setTimeout(()=>winOverlay.classList.add('active'),400);setTimeout(launchConfetti,1000)}
 document.getElementById('playAgain').addEventListener('click',()=>{winOverlay.classList.remove('active');confettiContainer.innerHTML='';position=1;rolls=0;streak=0;rollCountEl.textContent=0;posDisplay.textContent=1;streakBadge.classList.remove('visible');progressFill.style.width='0%';progressLabel.textContent='0%';updatePosition();drawConnections();rollBtn.disabled=false});
 
 // Fireworks + confetti
